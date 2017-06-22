@@ -7,6 +7,7 @@ import 'rxjs/add/operator/toPromise';
 @Injectable()
 export class HeroService {
   private heroesUrl = 'api/heroes';
+  private headers = new Headers({'Content-Type' : 'application/json'});
 
   constructor(private http: Http) {}
 
@@ -15,6 +16,7 @@ export class HeroService {
       .toPromise()
       .then(response => response.json().data as Hero[])
       .catch(this.handleError);
+    // THE .data PROPERTY ON THE json() RESULT IS SPECIFIC TO THE IN MEMORY WEB API. OTHER WEB APIs have other properties.
   }
 
   private handleError(error: any): Promise<any> {
@@ -30,7 +32,35 @@ export class HeroService {
   }
 
   getHero(id: number): Promise<Hero> {
-    return this.getHeroes().then(heroes => heroes.find(hero => hero.id === id));
+    const heroByIdUrl = `${this.heroesUrl}/${id}`;
+    return this.http.get(heroByIdUrl)
+      .toPromise()
+      .then(response => response.json().data as Hero)
+      .catch(this.handleError);
+  }
+
+  update(hero: Hero): Promise<Hero> {
+    const updateHeroUrl = `${this.heroesUrl}/${hero.id}`;
+
+    return this.http.put(updateHeroUrl, JSON.stringify(hero), {headers: this.headers})
+      .toPromise()
+      .then(() => hero)
+      .catch(this.handleError);
+  }
+
+  create(name: string): Promise<Hero> {
+    return this.http.post(this.heroesUrl, JSON.stringify({name: name}), {headers: this.headers})
+      .toPromise()
+      .then(resp => resp.json().data as Hero)
+      .catch(this.handleError);
+  }
+
+  delete(id: number): Promise<void> {
+    const deleteHeroUrl = `${this.heroesUrl}/${id}`;
+    return this.http.delete(deleteHeroUrl, {headers: this.headers})
+      .toPromise()
+      .then(() => null)
+      .catch(this.handleError);
   }
 }
 
